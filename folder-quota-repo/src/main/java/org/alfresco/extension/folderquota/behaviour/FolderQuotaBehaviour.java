@@ -35,6 +35,7 @@ import org.alfresco.extension.folderquota.FolderUsageCalculator;
 import org.alfresco.extension.folderquota.SizeChange;
 import org.alfresco.repo.content.ContentServicePolicies;
 import org.alfresco.repo.node.NodeServicePolicies;
+import org.alfresco.repo.node.integrity.IntegrityException;
 import org.alfresco.repo.policy.Behaviour;
 import org.alfresco.repo.policy.JavaBehaviour;
 import org.alfresco.repo.policy.PolicyComponent;
@@ -150,14 +151,15 @@ public class FolderQuotaBehaviour implements ContentServicePolicies.OnContentPro
 						if(quotaSize != null) {
 							if(currentSize + change > quotaSize)
 							{
-								try
-								{
-									tx.rollback();
-								}
-								catch(SystemException ex)
-								{
-									logger.warn(String.format("[FolderQuota] - An upload to folder %s failed due to quota", quotaParent));
-								}
+//								try
+//								{
+									//tx.rollback();
+									throw new IntegrityException(String.format("[FolderQuota] - An upload to folder %s failed due to quota", quotaParent), null);
+//								}
+//								catch(SystemException ex)
+//								{
+//									logger.warn(String.format("[FolderQuota] - An upload to folder %s failed due to quota", quotaParent));
+//								}
 							}
 							else
 							{
