@@ -1,11 +1,92 @@
-#!/bin/bash
-# Downloads the spring-loaded lib if not existing and      
-# runs the Repo AMP applied to Alfresco WAR.           
-# Note. the Share WAR is not deployed.              
-springloadedfile=~/.m2/repository/org/springframework/springloaded/1.2.3.RELEASE/springloaded-1.2.3.RELEASE.jar
+#!/bin/sh
 
-if [ ! -f $springloadedfile ]; then
-mvn validate -Psetup
+export COMPOSE_FILE_PATH="${PWD}/target/classes/docker/docker-compose.yml"
+
+if [ -z "${M2_HOME}" ]; then
+  export MVN_EXEC="mvn"
+else
+  export MVN_EXEC="${M2_HOME}/bin/mvn"
 fi
 
-MAVEN_OPTS="-javaagent:$springloadedfile -noverify -Xms256m -Xmx2G" mvn integration-test -Pamp-to-war
+start() {
+    docker volume create folder-quota-repo-acs-volume
+    docker volume create folder-quota-repo-db-volume
+    docker volume create folder-quota-repo-ass-volume
+    docker-compose -f "$COMPOSE_FILE_PATH" up --build -d
+}
+
+down() {
+    if [ -f "$COMPOSE_FILE_PATH" ]; then
+        docker-compose -f "$COMPOSE_FILE_PATH" down
+    fi
+}
+
+purge() {
+    docker volume rm -f folder-quota-repo-acs-volume
+    docker volume rm -f folder-quota-repo-db-volume
+    docker volume rm -f folder-quota-repo-ass-volume
+}
+
+build() {
+    $MVN_EXEC clean package
+}
+
+tail() {
+    docker-compose -f "$COMPOSE_FILE_PATH" logs -f
+}
+
+tail_all() {
+    docker-compose -f "$COMPOSE_FILE_PATH" logs --tail="all"
+}
+
+prepare_test() {
+    $MVN_EXEC verify -DskipTests=true
+}
+
+test() {
+    $MVN_EXEC verify
+}
+
+case "$1" in
+  build_start)
+    down
+    build
+    start
+    tail
+    ;;
+  build_start_it_supported)
+    down
+    build
+    prepare_test
+    start
+    tail
+    ;;
+  start)
+    start
+    tail
+    ;;
+  stop)
+    down
+    ;;
+  purge)
+    down
+    purge
+    ;;
+  tail)
+    tail
+    ;;
+  build_test)
+    down
+    build
+    prepare_test
+    start
+    test
+    tail_all
+    down
+    ;;
+  test)
+    test
+    ;;
+  *)
+    echo "Usage: $0 {build_start|build_start_it_supported|start|stop|purge|tail|build_test|test}"
+esac

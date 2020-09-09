@@ -27,3 +27,14 @@ hs_err_pid*
 *.iml
 alf_data_dev
 target
+.settings/
+
+folder-quota-repo/.classpath
+
+folder-quota-repo/.project
+
+folder-quota-share/.classpath
+
+folder-quota-share/.project
+
+.project
